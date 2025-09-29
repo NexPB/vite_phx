@@ -36,7 +36,7 @@ defmodule Vite.Config do
   end
 
   def vite_manifest() do
-    Application.get_env(:vite_phx, :vite_manifest) || "priv/static/manifest.json"
+    Application.get_env(:vite_phx, :vite_manifest) || "priv/static/.vite/manifest.json"
   end
 
   def vite_manifest(file) do
@@ -45,7 +45,7 @@ defmodule Vite.Config do
   end
 
   def dev_server_address() do
-    Application.get_env(:vite_phx, :dev_server_address) || "http://localhost:3000"
+    Application.get_env(:vite_phx, :dev_server_address) || "http://localhost:5173"
   end
 
   def json_library() do
@@ -62,5 +62,9 @@ defmodule Vite.Config do
 
   def in_release_path(file) do
     Application.app_dir(release_app(), file)
+  end
+
+  def react?() do
+    Application.get_env(:vite_phx, :react, false)
   end
 end

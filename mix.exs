@@ -1,14 +1,13 @@
 defmodule Vite.MixProject do
   use Mix.Project
 
-  @version "0.3.2"
-  @elixir_requirement "~> 1.9"
+  @version "0.4.0"
 
   def project do
     [
       app: :vite_phx,
       version: @version,
-      elixir: @elixir_requirement,
+      elixir: "~> 1.18",
       start_permanent: Mix.env() == :prod,
       preferred_cli_env: [docs: :docs],
       deps: deps(),
@@ -36,8 +35,7 @@ defmodule Vite.MixProject do
 
   defp deps do
     [
-      {:phoenix, ">= 0.0.0"},
-      {:jason, ">= 0.0.0", optional: true},
+      {:phoenix_live_view, "~> 1.0"},
       {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
 
       # Docs dependencies (some for cross references)

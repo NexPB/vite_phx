@@ -1,3 +1,7 @@
+# 0.4.0
+
+- Use phoenix components (~H"") syntax
+
 # 0.3.2
 
 - Handle circular references, thanks @weelink! [PR 10](https://github.com/mindreframer/vite_phx/pull/10)
