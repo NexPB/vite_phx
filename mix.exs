@@ -28,8 +28,7 @@ defmodule Vite.MixProject do
 
   def application do
     [
-      extra_applications: [:logger],
-      mod: {Vite.Application, []}
+      extra_applications: [:logger]
     ]
   end
 
