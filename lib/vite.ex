@@ -10,13 +10,14 @@ defmodule Vite do
   attr :entries, :list
 
   def head(assigns) do
-    assigns = assign_new(assigns, :entries, fn ->
-      if production?() do
-        Vite.Manifest.entries(assigns[:src])
-      else
-        []
-      end
-    end)
+    assigns =
+      assign_new(assigns, :entries, fn ->
+        if production?() do
+          Vite.Manifest.entries()
+        else
+          []
+        end
+      end)
 
     if not production?() do
       ~H"""
