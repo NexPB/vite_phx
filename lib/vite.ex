@@ -8,6 +8,7 @@ defmodule Vite do
 
   attr :src, :string, required: true
   attr :entries, :list
+  attr :port, :integer
 
   def head(assigns) do
     assigns =
@@ -20,10 +21,13 @@ defmodule Vite do
       end)
 
     if not production?() do
+      assigns =
+        assign(assigns, :dev_server, Config.dev_server_address(port: assigns[:port]))
+
       ~H"""
       <.react_refresh />
-      <script type="module" src={Config.dev_server_address() <> "/@vite/client"}></script>
-      <script type="module" src={Config.dev_server_address() <> "/" <> assigns[:src]}></script>
+      <script type="module" src={assigns[:dev_server] <> "/@vite/client"}></script>
+      <script type="module" src={assigns[:dev_server] <> "/" <> assigns[:src]}></script>
       """
     else
       ~H"""
@@ -68,9 +72,13 @@ defmodule Vite do
   end
 
   attr :dev_server, :string
+  attr :port, :integer, default: nil
 
   def react_refresh(assigns) do
-    assigns = assign_new(assigns, :dev_server, fn -> Config.dev_server_address() end)
+    assigns =
+      assign_new(assigns, :dev_server, fn ->
+        Config.dev_server_address(port: assigns[:port])
+      end)
 
     ~H"""
     <script :if={Config.react?()} type="module">

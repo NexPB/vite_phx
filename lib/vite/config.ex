@@ -44,8 +44,19 @@ defmodule Vite.Config do
     Cache.purge(:vite_manifest)
   end
 
-  def dev_server_address() do
-    Application.get_env(:vite_phx, :dev_server_address) || "http://localhost:5173"
+  def dev_server_address(opts \\ []) do
+    port = Keyword.get(opts, :port)
+    url = Application.get_env(:vite_phx, :dev_server_address) || "http://localhost:5173"
+    uri = URI.parse(url)
+
+    uri =
+      if is_integer(port) do
+        %{uri | port: port}
+      else
+        uri
+      end
+
+    URI.to_string(uri)
   end
 
   def json_library() do
