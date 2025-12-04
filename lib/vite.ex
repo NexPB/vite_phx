@@ -9,10 +9,13 @@ defmodule Vite do
   attr :src, :string, required: true
   attr :entries, :list
   attr :port, :integer
+  attr :is_react, :boolean
 
   def head(assigns) do
     assigns =
-      assign_new(assigns, :entries, fn ->
+      assigns
+      |> assign_new(:is_react, fn -> Config.react?() end)
+      |> assign_new(:entries, fn ->
         if production?() do
           Vite.Manifest.entries()
         else
@@ -25,9 +28,9 @@ defmodule Vite do
         assign(assigns, :dev_server, Config.dev_server_address(port: assigns[:port]))
 
       ~H"""
-      <.react_refresh />
-      <script type="module" src={assigns[:dev_server] <> "/@vite/client"}></script>
-      <script type="module" src={assigns[:dev_server] <> "/" <> assigns[:src]}></script>
+      <.react_refresh dev_server={@dev_server} is_react={@is_react} />
+      <script type="module" src={@dev_server <> "/@vite/client"}></script>
+      <script type="module" src={@dev_server <> "/" <> @src}></script>
       """
     else
       ~H"""
@@ -72,16 +75,17 @@ defmodule Vite do
   end
 
   attr :dev_server, :string
-  attr :port, :integer, default: nil
+  attr :port, :integer
+  attr :is_react, :boolean
 
   def react_refresh(assigns) do
     assigns =
-      assign_new(assigns, :dev_server, fn ->
-        Config.dev_server_address(port: assigns[:port])
-      end)
+      assigns
+      |> assign_new(:dev_server, fn -> Config.dev_server_address(port: assigns[:port]) end)
+      |> assign_new(:is_react, fn -> Config.react?() end)
 
     ~H"""
-    <script :if={Config.react?()} type="module">
+    <script :if={@is_react} type="module">
       import RefreshRuntime from '<%= assigns[:dev_server] %>/@react-refresh'
       RefreshRuntime.injectIntoGlobalHook(window)
       window.$RefreshReg$ = () => {}
