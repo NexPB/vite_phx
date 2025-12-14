@@ -9,19 +9,22 @@ defmodule Vite.MixProject do
       version: @version,
       elixir: "~> 1.18",
       start_permanent: Mix.env() == :prod,
-      preferred_cli_env: [docs: :docs],
       deps: deps(),
       docs: docs(),
       package: package()
     ]
   end
 
+  def cli do
+    [preferred_envs: [docs: :docs]]
+  end
+
   defp package do
     [
-      maintainers: ["Roman Heinrich"],
+      maintainers: ["Roman Heinrich", "NexPB"],
       description: "vite_phx helps to integrate Vite.js into your Phoenix app",
       licenses: ["MIT"],
-      links: %{Github: "https://github.com/mindreframer/vite_phx"},
+      links: %{Github: "https://github.com/NexPB/vite_phx"},
       files: ~w(lib CHANGELOG.md LICENSE.md mix.exs README.md .formatter.exs)
     ]
   end
@@ -36,9 +39,8 @@ defmodule Vite.MixProject do
     [
       {:phoenix_live_view, "~> 1.0"},
       {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
-
-      # Docs dependencies (some for cross references)
-      {:ex_doc, "~> 0.22", only: :docs, runtime: false}
+      {:ex_doc, "~> 0.22", only: :docs, runtime: false},
+      {:igniter, "~> 0.7", optional: true}
     ]
   end
 
