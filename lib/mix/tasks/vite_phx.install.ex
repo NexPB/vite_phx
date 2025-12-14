@@ -196,7 +196,7 @@ if Code.ensure_loaded?(Igniter) do
           igniter,
           :aliases,
           key,
-          {:ok, {:code, commands}}
+          fn _ -> {:ok, {:code, commands}} end
         )
       end)
     end
