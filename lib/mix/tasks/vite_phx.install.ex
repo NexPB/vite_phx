@@ -25,6 +25,8 @@ defmodule Mix.Tasks.VitePhx.Install.Docs do
     ## Options
 
     * `--react` - Setup Vite for React
+    * `--input` - The input file to be used (default: "js/app.jsx")
+    * `--package-manager` - The package manager to be used (default: "pnpm")
     """
   end
 end
@@ -48,12 +50,14 @@ if Code.ensure_loaded?(Igniter) do
         # `OptionParser` schema
         schema: [
           react: :boolean,
-          input: :string
+          input: :string,
+          package_manager: :string
         ],
         # Default values for the options in the `schema`
         defaults: [
           react: false,
-          input: "js/app.jsx"
+          input: "js/app.jsx",
+          package_manager: "pnpm"
         ],
         aliases: [
           i: :input
@@ -69,6 +73,9 @@ if Code.ensure_loaded?(Igniter) do
         |> vite_config_exs()
         |> phoenix_config_exs()
       end)
+      |> Igniter.Scribe.section("Modifying mix.exs", "", fn igniter ->
+        modify_mix(igniter)
+      end)
       |> Igniter.Scribe.section("Generating vite.config.js", "", fn igniter ->
         template = vite_config_file_template(igniter)
 
@@ -76,18 +83,27 @@ if Code.ensure_loaded?(Igniter) do
         |> Igniter.create_new_file("/assets/vite.config.js", template)
       end)
       |> Igniter.add_notice("""
-      Please ensure to install the required npm packages:
+      Please ensure to install the required NPM packages:
 
-      - vite
-      - @vitejs/plugin-react (if using React)
+      - `vite`
+      - `@vitejs/plugin-react` (if using React)
+
+      You can do this by running:
+
+      ```sh
+      cd assets
+      pnpm add -D vite #{if igniter.args.options[:react], do: "@vitejs/plugin-react", else: ""}
+      ```
 
       And add the following scripts to your package.json:
 
       ```json
-      "scripts": {
-        "dev": "vite",
-        "build": "vite build",
-        "preview": "vite preview"
+      {
+        "scripts": {
+          "dev": "vite", // start dev server, aliases: `vite dev`, `vite serve`
+          "build": "vite build", // build for production
+          "preview": "vite preview" // locally preview production build
+        }
       }
       ```
 
@@ -158,6 +174,31 @@ if Code.ensure_loaded?(Igniter) do
          ]
          """)}
       )
+    end
+
+    defp modify_mix(igniter) do
+      package_manager = igniter.args.options[:package_manager]
+
+      build_command =
+        case package_manager do
+          "npm" -> "cd assets && npm run build"
+          "pnpm" -> "pnpm -r --if-present run build"
+        end
+
+      scripts = [
+        "assets.setup": ["cmd #{package_manager} install"],
+        "assets.build": ["cmd #{build_command}"],
+        "assets.deploy": ["assets.build", "phx.digest"]
+      ]
+
+      Enum.reduce(scripts, igniter, fn {key, commands}, igniter ->
+        Igniter.Project.MixProject.update(
+          igniter,
+          :aliases,
+          key,
+          {:ok, {:code, commands}}
+        )
+      end)
     end
 
     defp vite_config_file_template(igniter) do
