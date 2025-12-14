@@ -195,7 +195,7 @@ if Code.ensure_loaded?(Igniter) do
         Igniter.Project.MixProject.update(
           igniter,
           :aliases,
-          key,
+          [String.to_atom(key)],
           fn _ -> {:ok, {:code, commands}} end
         )
       end)
