@@ -185,11 +185,11 @@ if Code.ensure_loaded?(Igniter) do
           "pnpm" -> "pnpm -r --if-present run build"
         end
 
-      scripts = [
-        "assets.setup": ["cmd #{package_manager} install"],
-        "assets.build": ["cmd #{build_command}"],
-        "assets.deploy": ["assets.build", "phx.digest"]
-      ]
+      scripts = %{
+        "assets.setup" => ["cmd #{package_manager} install"],
+        "assets.build" => ["cmd #{build_command}"],
+        "assets.deploy" => ["assets.build", "phx.digest"]
+      }
 
       Enum.reduce(scripts, igniter, fn {key, commands}, igniter ->
         Igniter.Project.MixProject.update(
