@@ -192,11 +192,11 @@ if Code.ensure_loaded?(Igniter) do
       }
 
       Enum.reduce(scripts, igniter, fn {key, commands}, igniter ->
-        Igniter.Project.MixProject.update(
+        Igniter.Project.TaskAliases.add_alias(
           igniter,
-          :aliases,
-          [String.to_atom(key)],
-          fn _ -> {:ok, {:code, commands}} end
+          key,
+          commands,
+          if_exists: :warn
         )
       end)
     end
