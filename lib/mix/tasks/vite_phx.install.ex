@@ -45,13 +45,6 @@ if Code.ensure_loaded?(Igniter) do
         group: :vite_phx,
         # An example invocation
         example: __MODULE__.Docs.example(),
-        # A list of environments that this should be installed in.
-        only: nil,
-        # a list of positional arguments, i.e `[:file]`
-        positional: [],
-        # Other tasks your task composes using `Igniter.compose_task`, passing in the CLI argv
-        # This ensures your option schema includes options from nested tasks
-        composes: [],
         # `OptionParser` schema
         schema: [
           react: :boolean,
@@ -70,11 +63,11 @@ if Code.ensure_loaded?(Igniter) do
 
     @impl Igniter.Mix.Task
     def igniter(igniter) do
-      app_name = Ingniter.Project.app_name(igniter)
-
       igniter
       |> Igniter.Scribe.section("Modifying config", "", fn igniter ->
-        vite_config_exs(igniter)
+        igniter
+        |> vite_config_exs()
+        |> phoenix_config_exs()
       end)
       |> Igniter.Scribe.section("Generating vite.config.js", "", fn igniter ->
         template = vite_config_file_template(igniter)
@@ -110,7 +103,7 @@ if Code.ensure_loaded?(Igniter) do
     end
 
     defp vite_config_exs(igniter) do
-      app_name = Igniter.Project.app_name(igniter)
+      app_name = Igniter.Project.Application.app_name(igniter)
       react? = igniter.args.options[:react]
 
       igniter
@@ -124,7 +117,7 @@ if Code.ensure_loaded?(Igniter) do
         "config.exs",
         :vite_phx,
         [:release_app],
-        {:code, Sourceror.parse_string!(app_name)}
+        {:code, Sourceror.parse_string!(":#{Atom.to_string(app_name)}")}
       )
       |> then(fn igniter ->
         if react? do
@@ -139,25 +132,10 @@ if Code.ensure_loaded?(Igniter) do
           igniter
         end
       end)
-
-      # template = """
-      # config :vite_phx,
-      #   release_app: :#{Atom.to_string(app)},
-      #   environment: config_env()
-      # """
-
-      # if Keyword.get(opts, :react, false) do
-      #   """
-      #   #{template},
-      #   react: true
-      #   """
-      # else
-      #   template
-      # end
     end
 
     defp phoenix_config_exs(igniter) do
-      app_name = Igniter.Project.app_name(igniter)
+      app_name = Igniter.Project.Application.app_name(igniter)
       {igniter, endpoint} = Igniter.Libs.Phoenix.select_endpoint(igniter)
 
       if is_nil(endpoint) do
@@ -179,12 +157,6 @@ if Code.ensure_loaded?(Igniter) do
            }
          ]
          """)}
-      )
-      |> Igniter.Project.Config.configure(
-        "config.exs",
-        :phoenix,
-        [:static_url],
-        {:code, Sourceror.parse_string!("[:host, System.get_env(\"APP_HOST\") || \"localhost\"]")}
       )
     end
 
