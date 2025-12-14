@@ -80,7 +80,7 @@ if Code.ensure_loaded?(Igniter) do
         template = vite_config_file_template(igniter)
 
         igniter
-        |> Igniter.create_new_file("/assets/vite.config.js", template)
+        |> Igniter.create_new_file("./assets/vite.config.js", template)
       end)
       |> Igniter.add_notice("""
       Please ensure to install the required NPM packages:
