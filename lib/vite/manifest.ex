@@ -1,25 +1,40 @@
 defmodule Vite.Manifest do
-  alias Vite.ManifestReader
-  require Logger
+  @moduledoc """
+  Reads the Vite manifest file and converts it to a list of entries
+  """
+  alias Vite.{Config, ManifestReader}
 
   @type entry_value :: binary() | list(binary()) | nil
 
-  @spec read() :: map()
-  def read() do
-    ManifestReader.read_vite()
+  @spec read(binary()) :: map()
+  def read(manifest_path) do
+    manifest_path =
+      if Config.current_env() == :prod do
+        Config.in_release_path(manifest_path)
+      else
+        manifest_path
+      end
+
+    ManifestReader.read_vite(manifest_path)
   end
 
-  @spec entries() :: [list()]
-  def entries() do
-    read()
+  @spec entries(binary()) :: [list()]
+  def entries(manifest_path) do
+    manifest_path
+    |> read()
     |> Enum.filter(&isEntry/1)
     |> Enum.map(fn {_, value} -> value end)
-    |> Enum.map(fn entry -> convert_item([], entry) end)
+    |> Enum.map(fn entry -> convert_item(manifest_path, entry, []) end)
   end
 
   @spec entry(binary()) :: list()
-  def entry(entry_name) do
-    Enum.find(entries(), &(Keyword.get(&1, :entry_name) == entry_name))
+  @spec entry(binary(), Keyword.t()) :: list()
+  def entry(entry_name, opts \\ []) do
+    manifest_path = Keyword.get_lazy(opts, :manifest_path, fn -> Config.vite_manifest() end)
+
+    manifest_path
+    |> entries()
+    |> Enum.find(&(Keyword.get(&1, :entry_name) == entry_name))
   end
 
   @spec isEntry({any, map()}) :: boolean()
@@ -34,18 +49,23 @@ defmodule Vite.Manifest do
   #   "isEntry" => true,
   #   "src" => "src/main.tsx"
   # }
-  defp convert_item(acc, raw_data) do
+  defp convert_item(manifest_path, raw_data, acc) do
     css = Map.get(raw_data, "css", [])
     entry_name = Map.get(raw_data, "src")
     imports = Map.get(raw_data, "imports", [])
     acc = acc ++ [{:entry_name, entry_name}]
     acc = acc ++ Enum.map(css, fn file -> {:css, file} end)
     acc = acc ++ [{:module, Map.get(raw_data, "file")}]
-    acc = Enum.reduce(imports, acc, fn file, innerAcc -> handle_import(innerAcc, file) end)
+
+    acc =
+      Enum.reduce(imports, acc, fn file, innerAcc ->
+        handle_import(manifest_path, file, innerAcc)
+      end)
+
     acc |> Enum.uniq()
   end
 
-  defp convert_item(acc, raw_data, :import) do
+  defp convert_item(manifest_path, raw_data, acc, :import) do
     css = Map.get(raw_data, "css", [])
     imports = Map.get(raw_data, "imports", [])
     import_module = {:import_module, Map.get(raw_data, "file")}
@@ -59,27 +79,22 @@ defmodule Vite.Manifest do
       false ->
         acc = acc ++ [import_module]
 
-        acc = Enum.reduce(imports, acc, fn file, innerAcc -> handle_import(innerAcc, file) end)
-        acc |> Enum.uniq()
+        acc =
+          Enum.reduce(imports, acc, fn file, innerAcc ->
+            handle_import(manifest_path, file, innerAcc)
+          end)
+
+        Enum.uniq(acc)
     end
   end
 
-  @spec get_file(binary()) :: entry_value()
-  def get_file(file) do
-    read() |> get_in([file, "file"]) |> raise_missing(file)
-  end
+  @spec handle_import(binary(), binary(), list()) :: list()
+  def handle_import(manifest_path, file, acc) do
+    raw_data =
+      manifest_path
+      |> read()
+      |> Map.get(file)
 
-  def handle_import(acc, file) do
-    raw_data = read() |> Map.get(file)
-    convert_item(acc, raw_data, :import)
-  end
-
-  @spec raise_missing(entry_value(), binary()) :: entry_value()
-  defp raise_missing(check, file) do
-    if is_nil(check) do
-      raise("Could not find an entry for #{file} in the manifest!")
-    else
-      check
-    end
+    convert_item(manifest_path, raw_data, acc, :import)
   end
 end

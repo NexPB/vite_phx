@@ -7,9 +7,11 @@ defmodule Vite do
   alias Vite.Config
 
   attr :src, :string, required: true
+  attr :manifest, :string
   attr :entries, :list
   attr :port, :integer
   attr :is_react, :boolean
+  attr :path_modifier, {:fun, 1}
 
   def head(assigns) do
     assigns =
@@ -17,7 +19,7 @@ defmodule Vite do
       |> assign_new(:is_react, fn -> Config.react?() end)
       |> assign_new(:entries, fn ->
         if production?() do
-          Vite.Manifest.entry(assigns[:src])
+          Vite.Manifest.entry(assigns[:src], manifest_path: assigns[:manifest])
         else
           []
         end
@@ -38,6 +40,7 @@ defmodule Vite do
         :for={{type, src} <- assigns[:entries]}
         type={type}
         entry={src}
+        path_modifier={@path_modifier}
       />
       """
     end
@@ -45,8 +48,21 @@ defmodule Vite do
 
   attr :type, :atom, required: true
   attr :entry, :string, required: true
+  attr :path_modifier, {:fun, 1}
 
   def entry(assigns) do
+    entry_path = "/" <> assigns[:entry]
+
+    entry =
+      if is_function(assigns[:path_modifier]) do
+        assigns[:path_modifier].(entry_path)
+      else
+        entry_path
+      end
+
+    assigns =
+      assign(assigns, :entry, entry)
+
     case assigns[:type] do
       :entry_name ->
         # Ignore as it is the start
@@ -54,22 +70,22 @@ defmodule Vite do
 
       :css ->
         ~H"""
-        <link phx-track-static rel="stylesheet" href={"/" <> @entry}>
+        <link phx-track-static rel="stylesheet" href={@entry}>
         """
 
       :import_css ->
         ~H"""
-        <link phx-track-static rel="stylesheet" href={"/" <> @entry}>
+        <link phx-track-static rel="stylesheet" href={@entry}>
         """
 
       :import_module ->
         ~H"""
-        <link rel="modulepreload" href={"/" <> @entry}>
+        <link rel="modulepreload" href={@entry}>
         """
 
       :module ->
         ~H"""
-        <script type="module" crossorigin defer phx-track-static src={"/" <> @entry}></script>
+        <script type="module" crossorigin defer phx-track-static src={@entry}></script>
         """
     end
   end

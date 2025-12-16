@@ -17,11 +17,13 @@ defmodule Vite.ManifestReader do
     end
   end
 
-  def read_vite() do
-    case Cache.get(:vite_manifest) do
+  def read_vite(manifest_path) do
+    cache_key = cache_key(manifest_path)
+
+    case Cache.get(cache_key) do
       nil ->
-        res = read_vite(Config.current_env())
-        Cache.put(:vite_manifest, res)
+        res = read_vite_file(manifest_path)
+        Cache.put(cache_key, res)
         res
 
       res ->
@@ -29,37 +31,17 @@ defmodule Vite.ManifestReader do
     end
   end
 
-  def read_vite(:prod) do
-    full_vite_manifest = Config.full_vite_manifest()
-
-    if File.exists?(full_vite_manifest) do
-      full_vite_manifest |> File.read!() |> Config.json_library().decode!()
+  defp read_vite_file(manifest_path) do
+    if File.exists?(manifest_path) do
+      manifest_path
+      |> File.read!()
+      |> Config.json_library().decode!()
     else
-      raise ManifestNotFoundError, manifest_file: full_vite_manifest
+      raise ManifestNotFoundError, manifest_file: manifest_path
     end
   end
 
-  def read_vite(_) do
-    File.read!(Config.vite_manifest()) |> Config.json_library().decode!()
-  end
-
-  def read_phx() do
-    case Cache.get(:phx_manifest) do
-      nil ->
-        res = read_phx(Config.current_env())
-        Cache.put(:phx_manifest, res)
-        res
-
-      res ->
-        res
-    end
-  end
-
-  def read_phx(:prod) do
-    File.read!(Config.full_phx_manifest()) |> Config.json_library().decode!()
-  end
-
-  def read_phx(_) do
-    ""
+  defp cache_key(manifest_path) do
+    {:vite_manifest, manifest_path}
   end
 end
