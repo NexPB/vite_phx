@@ -33,8 +33,6 @@ defmodule Vite do
       <script type="module" src={@dev_server <> "/" <> @src}></script>
       """
     else
-      IO.inspect(assigns, label: "Vite Head Assigns for prod")
-
       ~H"""
       <.entry
         :for={{type, src} <- assigns[:entries]}
@@ -49,8 +47,6 @@ defmodule Vite do
   attr :entry, :string, required: true
 
   def entry(assigns) do
-    IO.inspect(assigns, label: "Vite Entry Assigns")
-
     case assigns[:type] do
       :entry_name ->
         # Ignore as it is the start
