@@ -11,7 +11,7 @@ defmodule Vite do
   attr :entries, :list
   attr :port, :integer
   attr :is_react, :boolean
-  attr :path_modifier, {:fun, 1}
+  attr :path_modifier, {:fun, 1}, default: nil
 
   def head(assigns) do
     assigns =
@@ -48,16 +48,21 @@ defmodule Vite do
 
   attr :type, :atom, required: true
   attr :entry, :string, required: true
-  attr :path_modifier, {:fun, 1}
+  attr :path_modifier, {:fun, 1}, default: nil
 
   def entry(assigns) do
     entry_path = "/" <> assigns[:entry]
 
     entry =
-      if is_function(assigns[:path_modifier]) do
-        assigns[:path_modifier].(entry_path)
-      else
-        entry_path
+      cond do
+        is_function(assigns[:path_modifier], 1) ->
+          assigns[:path_modifier].(entry_path)
+
+        is_function(assigns[:path_modifier]) ->
+          raise "path_modifier must be a function that takes 1 argument"
+
+        true ->
+          entry_path
       end
 
     assigns =
