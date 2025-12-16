@@ -30,7 +30,7 @@ defmodule Vite.Manifest do
   @spec entry(binary()) :: list()
   @spec entry(binary(), Keyword.t()) :: list()
   def entry(entry_name, opts \\ []) do
-    manifest_path = Keyword.get_lazy(opts, :manifest_path, fn -> Config.vite_manifest() end)
+    manifest_path = Keyword.get(opts, :manifest_path) || Config.vite_manifest()
 
     manifest_path
     |> entries()
