@@ -7,6 +7,7 @@ defmodule Vite do
   alias Vite.Config
 
   attr :src, :string, required: true
+  attr :manifest, :string
   attr :entries, :list
   attr :port, :integer
   attr :is_react, :boolean
@@ -17,7 +18,7 @@ defmodule Vite do
       |> assign_new(:is_react, fn -> Config.react?() end)
       |> assign_new(:entries, fn ->
         if production?() do
-          Vite.Manifest.entry(assigns[:src])
+          Vite.Manifest.entry(assigns[:src], manifest_path: assigns[:manifest])
         else
           []
         end
